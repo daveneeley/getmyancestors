@@ -20,7 +20,7 @@
 """
 
 from __future__ import print_function
-import sys, argparse, getpass, time
+import sys, argparse, getpass, time, json
 
 try:
     import requests
@@ -28,6 +28,12 @@ except ImportError:
     sys.stderr.write('You need to install the requests module first\n')
     sys.stderr.write('(run this in your terminal: "python3 -m pip install requests" or "python3 -m pip install --user requests")\n')
     exit(2)
+
+class SetEncoder(json.JSONEncoder):
+   def default(self, obj):
+      if isinstance(obj, set):
+         return list(obj)
+      return json.JSONEncoder.default(self, obj)
 
 # FamilySearch session class
 class Session:
@@ -336,6 +342,9 @@ class Indi:
             file.write('1 FAMC @F' + str(num) + '@\n')
         file.write('1 _FSFTID ' + self.fid + '\n')
 
+    def json(self, file = sys.stdout):
+        data = json.dumps(self.__dict__, cls=SetEncoder)
+        file.write(data+'\n')
 
 
 # GEDCOM family class
@@ -391,6 +400,9 @@ class Fam:
         if self.fid:
             file.write('1 _FSFTID ' + self.fid + '\n')
 
+    def json(self, file = sys.stdout):
+        data = json.dumps(self.__dict__, cls=SetEncoder)
+        file.write(data+'\n')
 
 
 # family tree class
@@ -474,6 +486,12 @@ class Tree:
             self.fam[(husb, wife)].print(file)
         file.write('0 TRLR\n')
 
+    def json(self, file = sys.stdout):
+        for fid in sorted(self.indi, key = lambda x: self.indi.__getitem__(x).num):
+            self.indi[fid].json(file)
+        for husb, wife in sorted(self.fam, key = lambda x: self.fam.__getitem__(x).num):
+            self.fam[(husb, wife)].json(file)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'Retrieve GEDCOM data from FamilySearch Tree (4 Jul 2016)', add_help = False, usage = 'getmyancestors.py -u username -p password [options]')
     parser.add_argument('-u', metavar = '<STR>', type = str, help = 'FamilySearch username')
@@ -541,4 +559,4 @@ if __name__ == '__main__':
 
     # compute number for family relationships and print GEDCOM file
     tree.reset_num()
-    tree.print(args.o)
+    tree.json(args.o)
