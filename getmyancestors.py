@@ -49,7 +49,7 @@ class Session:
     def login(self):
         while True:
             try:
-                url = 'https://familysearch.org/auth/familysearch/login'
+                url = 'https://www.familysearch.org/auth/familysearch/login'
                 if self.verbose:
                     self.logfile.write('[' + time.strftime("%Y-%m-%d %H:%M:%S") + ']: Downloading: ' + url + '\n')
                 r = requests.get(url, params = {'ldsauth': False}, allow_redirects = False)
